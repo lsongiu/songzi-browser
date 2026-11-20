@@ -142,6 +142,8 @@ class NativePlayer(context: Context) {
             MediaCommand.STOP, MediaCommand.PAUSE -> pause()
             MediaCommand.REWIND -> seekBy(-VideoModeController.STEP)
             MediaCommand.FAST_FORWARD -> seekBy(VideoModeController.STEP)
+            //the fullscreen of a page has no meaning for the player of the app
+            MediaCommand.FULLSCREEN -> {}
         }
     }
 

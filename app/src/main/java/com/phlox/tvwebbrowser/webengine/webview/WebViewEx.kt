@@ -743,6 +743,9 @@ open class WebViewEx(context: Context, val callback: Callback, val jsInterface: 
 
     fun seekMediaBy(delta: Double) = mediaControls.seekBy(delta)
 
+    /** Fullscreens the video of the page, or leaves the fullscreen view of the page */
+    fun toggleMediaFullscreen() = mediaControls.toggleFullscreen()
+
     fun hideCustomView() {
         webChromeClient_.onHideCustomView()
     }

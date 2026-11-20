@@ -93,6 +93,71 @@ function tvBroWatchMedia(send, frames) {
         return pick(allMedia()) || (lastPlayed && lastPlayed.isConnected ? lastPlayed : null);
     }
 
+    // the document whose fullscreen element is shown: this one, or an ancestor frame's
+    function fullscreenDoc() {
+        var d = document;
+        while (d) {
+            if (d.fullscreenElement || d.webkitFullscreenElement) return d;
+            var w = d.defaultView;
+            if (!w || w === w.top) return null;
+            try {
+                d = w.parent.document;
+            } catch (e) {
+                return null; // another origin: its own scripts run there
+            }
+        }
+        return null;
+    }
+
+    function requestFullscreen(el) {
+        var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen ||
+            el.mozRequestFullScreen || el.msRequestFullscreen;
+        if (!fn) return false;
+        try {
+            var p = fn.call(el);
+            if (p && p.catch) p.catch(function() {});
+        } catch (e) {
+            return false;
+        }
+        return true;
+    }
+
+    function exitFullscreen(d) {
+        var fn = d.exitFullscreen || d.webkitExitFullscreen || d.webkitCancelFullScreen ||
+            d.mozCancelFullScreen || d.msExitFullscreen;
+        if (!fn) return;
+        try {
+            var p = fn.call(d);
+            if (p && p.catch) p.catch(function() {});
+        } catch (e) {}
+    }
+
+    // the box of the page that shows the video with its controls: the video, or the elements around it
+    // that fill the screen (the video alone would come without the bar and the buttons of its player)
+    function playerBox(m) {
+        var box = m;
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        for (var el = m; el.parentElement && el.parentElement !== document.body;) {
+            var r = el.parentElement.getBoundingClientRect();
+            if (r.width < vw * 0.5 || r.height < vh * 0.5) break;
+            box = el.parentElement;
+            el = box;
+        }
+        return box;
+    }
+
+    // fullscreen, or back from it
+    function toggleFullscreen(m) {
+        var d = fullscreenDoc();
+        if (d) {
+            exitFullscreen(d);
+            return;
+        }
+        if (!m) return;
+        if (!requestFullscreen(playerBox(m))) requestFullscreen(document.documentElement);
+    }
+
     // a page may refuse to play: its promise is rejected
     function play(m) {
         var p = m.play();
@@ -107,8 +172,12 @@ function tvBroWatchMedia(send, frames) {
     // a command, or a command and its number of seconds: 'seekTo:42.5', 'seekBy:-10'
     function command(command) {
         var m = target();
-        if (!m) return;
         var parts = String(command).split(':');
+        if (!m) {
+            // no media: 'fullscreen' still leaves the fullscreen view (a stream that ended, say)
+            if (parts[0] == 'fullscreen') toggleFullscreen(null);
+            return;
+        }
         var seconds = parseFloat(parts[1]);
         switch (parts[0]) {
             case 'toggle':
@@ -135,6 +204,9 @@ function tvBroWatchMedia(send, frames) {
                 break;
             case 'seekBy':
                 if (isFinite(seconds)) seek(m, m.currentTime + seconds);
+                break;
+            case 'fullscreen':
+                toggleFullscreen(m);
                 break;
         }
     }

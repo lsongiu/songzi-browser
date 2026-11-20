@@ -105,6 +105,9 @@ internal class WebViewMediaControls(private val webView: WebView, private val on
 
     fun seekBy(delta: Double) = send(MediaCommand.seekBy(delta))
 
+    /** Fullscreens the video of the page, or leaves the fullscreen view of the page */
+    fun toggleFullscreen() = send(MediaCommand.FULLSCREEN.js)
+
     private fun send(command: String) {
         val frame = frames.target()
         if (frame != null) {

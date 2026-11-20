@@ -289,6 +289,10 @@ class WebViewWebEngine(val tab: BrowserTab) : WebEngine, VirtualCursorSupport, S
         webView?.mediaCommand(MediaCommand.PLAY)
     }
 
+    override fun toggleFullscreen() {
+        webView?.toggleMediaFullscreen()
+    }
+
     override fun find(text: String) {
         if (text.isEmpty()) {
             clearFind()

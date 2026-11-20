@@ -41,7 +41,9 @@ class MediaFrames<F : Any> {
 
 /** The commands of media_controls.js (see tvBroWatchMedia) */
 enum class MediaCommand(val js: String) {
-    TOGGLE("toggle"), PLAY("play"), PAUSE("pause"), STOP("stop"), REWIND("rewind"), FAST_FORWARD("forward");
+    TOGGLE("toggle"), PLAY("play"), PAUSE("pause"), STOP("stop"), REWIND("rewind"), FAST_FORWARD("forward"),
+    /** Fullscreens the video of the page, or leaves the fullscreen view */
+    FULLSCREEN("fullscreen");
 
     companion object {
         fun seekTo(position: Double) = "seekTo:$position"

@@ -17,6 +17,8 @@ interface MediaPlaybackSupport {
     fun pausePlayback()
     /** Plays the media (the built-in player gives it back) */
     fun resumePlayback()
+    /** Fullscreens the video of the page, or leaves the fullscreen view of the page */
+    fun toggleFullscreen()
 }
 
 data class MediaState(

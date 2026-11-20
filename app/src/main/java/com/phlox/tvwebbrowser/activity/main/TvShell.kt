@@ -91,6 +91,13 @@ import kotlinx.coroutines.launch
 class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Callback {
     companion object {
         private val TAG = TvShell::class.java.simpleName
+
+        /** The OK button of a remote, or the Enter of a keyboard */
+        private val OK_KEYCODES = intArrayOf(KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
+            KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_A)
+
+        /** How soon a second press of OK after the first one still makes a double press */
+        private const val DOUBLE_OK_MS = 400L
     }
 
     private val activity = host.activity
@@ -805,6 +812,8 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
             if (event.action == KeyEvent.ACTION_UP) downInVideoMode()
             return true
         }
+        //a double press of OK: fullscreen of the video of the page, or back from the fullscreen view
+        if (handleDoubleOk(event)) return true
         // In cursor mode, Activity层直接接管D-pad方向键，绕过WebView独立的InputChannel。
         // WebView (Chromium) 有自己的 InputChannel 直接从系统 InputDispatcher 拿事件，
         // View树层（CursorLayout）拦截不住，必须在 Activity 层 return true。
@@ -830,6 +839,40 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
 
     //the focus stays in the view of the page meanwhile (its fullscreen view): its cursor would take the D-pad of a pad
     override fun takesDpad(): Boolean = vb.vPlayerScreen.isOpen || vb.vVideoChoice.isOpen || videoMode.isActive
+
+    private var lastOkPressAt = 0L
+    /** The presses whose keys were taken as the second one of a double press (their ups go nowhere) */
+    private val swallowedOkKeys = mutableSetOf<Int>()
+
+    /**
+     * The second press of OK, when it comes soon after the first one: in the direct navigation mode
+     * it fullscreens the video of the page (or leaves the fullscreen view), where the D-pad alone
+     * would need the cursor over the button of the page. The first press goes to the page as usual.
+     */
+    private fun handleDoubleOk(event: KeyEvent): Boolean {
+        if (event.keyCode !in OK_KEYCODES) return false
+        if (event.action == KeyEvent.ACTION_UP) return swallowedOkKeys.remove(event.keyCode)
+        if (event.action != KeyEvent.ACTION_DOWN || event.repeatCount > 0) return false
+        val now = SystemClock.elapsedRealtime()
+        val second = now - lastOkPressAt <= DOUBLE_OK_MS
+        lastOkPressAt = now
+        if (!second) return false
+        val engine = controller.currentTab.value?.takeIf { it.isWebEngineCreated }?.webEngine
+        when {
+            //the fullscreen view of the page: Back to the page (a press of OK toggled the playback)
+            fullscreen -> engine?.hideFullscreenView()
+            //direct navigation: the video of the page fills the screen, or the fullscreen view closes
+            engine?.virtualCursor?.isVirtualCursorMode() == false -> {
+                val playback = engine.mediaPlayback ?: return false
+                if (playback.mediaState.value == null) return false
+                playback.toggleFullscreen()
+            }
+            else -> return false
+        }
+        swallowedOkKeys.add(event.keyCode)
+        lastOkPressAt = 0
+        return true
+    }
 
     /** Waits for what other devices send while the screen of sending is open */
     private val sendSettings = SendSettings(activity, AppContext.provideConfig().prefs)

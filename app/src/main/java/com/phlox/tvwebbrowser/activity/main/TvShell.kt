@@ -795,13 +795,22 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode in intArrayOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)) {
+            android.util.Log.d("NavDebug", "TvShell.dispatchKeyEvent: key=${event.keyCode} action=${event.action}")
+        }
         if (vb.vPlayerScreen.dispatchPlayerKey(event)) return true
         //the Menu key (where it reaches the app) does what Down does in the video mode
         if (event.keyCode == KeyEvent.KEYCODE_MENU && videoMode.isActive && playerChoice.down != PlayerChoice.Down.CURSOR) {
             if (event.action == KeyEvent.ACTION_UP) downInVideoMode()
             return true
         }
-        return videoMode.dispatchKeyEvent(event)
+        val result = videoMode.dispatchKeyEvent(event)
+        if (event.keyCode in intArrayOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)) {
+            android.util.Log.d("NavDebug", "TvShell.dispatchKeyEvent: videoMode.isActive=${videoMode.isActive} returns=$result")
+        }
+        return result
     }
 
     //the focus stays in the view of the page meanwhile (its fullscreen view): its cursor would take the D-pad of a pad

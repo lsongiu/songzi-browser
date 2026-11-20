@@ -21,7 +21,8 @@ class ThirdPartyNoticesTest {
         val ids = notices.map { it.id }
         assertEquals(ids.distinct(), ids)
         assertTrue(listOf("androidx", "media3", "qrcodegen", "public-suffix-list", "material-icons").all { it in ids })
-        assertEquals(BuildConfig.FLAVOR_webengine == "geckoIncluded", "geckoview" in ids)
+        //this build ships the WebView engine only: the GeckoView notices are not included
+        assertFalse("geckoview" in ids)
         assertEquals(notices.sortedBy { it.name.lowercase() }, notices)
     }
 

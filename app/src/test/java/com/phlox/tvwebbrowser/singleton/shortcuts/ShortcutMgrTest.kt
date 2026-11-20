@@ -253,5 +253,6 @@ class ShortcutMgrTest {
         override fun newTab() { log += "newTab" }
         override fun closeTab() { log += "closeTab" }
         override fun switchTab(offset: Int) { log += "switchTab($offset)" }
+        override fun toggleNavigationMode() { log += "toggleNavigationMode" }
     }
 }

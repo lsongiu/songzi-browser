@@ -33,7 +33,9 @@ enum class Shortcut(val titleResId: Int, val prefsKey: String, vararg val defaul
     MEDIA_STOP(R.string.media_stop, "shortcut_media_stop", KeyBinding(KeyEvent.KEYCODE_MEDIA_STOP)),
     MEDIA_REWIND(R.string.media_rewind, "shortcut_media_rewind", KeyBinding(KeyEvent.KEYCODE_MEDIA_REWIND)),
     MEDIA_FAST_FORWARD(R.string.media_fast_forward, "shortcut_media_fast_forward",
-        KeyBinding(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD));
+        KeyBinding(KeyEvent.KEYCODE_MEDIA_FAST_FORWARD)),
+    TOGGLE_NAVIGATION_MODE(R.string.shortcut_toggle_navigation_mode, "shortcut_toggle_navigation_mode",
+        KeyBinding(KeyEvent.KEYCODE_MENU));
 
     companion object {
         /** The most keys an action keeps: a new one drops the oldest */

@@ -543,6 +543,13 @@
   <string name="settings_percent">%d%%</string>
   <string name="settings_joystick">用摇杆移动光标</string>
   <string name="settings_joystick_summary">游戏手柄的左摇杆可平滑地移动光标。若光标自行漂移，请关闭此项</string>
+  <string name="settings_default_navigation_mode">默认导航模式</string>
+  <string name="settings_default_navigation_mode_summary">打开页面时方向键如何控制：移动屏幕光标，或把按键直接传给网页</string>
+  <string name="navigation_mode_cursor">光标</string>
+  <string name="navigation_mode_direct">方向键</string>
+  <string name="navigation_mode_cursor_on">光标模式</string>
+  <string name="navigation_mode_direct_on">方向键模式 · 按返回切回光标</string>
+  <string name="shortcut_toggle_navigation_mode">切换导航模式</string>
   <string name="settings_group_keys">遥控器按键</string>
   <string name="settings_press_key">按下遥控器上的按键即可添加到此操作。按住可添加长按</string>
   <string name="settings_key_now_s">当前：%s</string>

@@ -1224,8 +1224,9 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
             onCursorModesChanged(CursorModes())
             return
         }
-        if (!cursor.isVirtualCursorMode()) {
-            cursor.setVirtualCursorMode(true)
+        val wantCursor = AppContext.provideConfig().defaultNavigationMode == Config.NavigationMode.CURSOR
+        if (cursor.isVirtualCursorMode() != wantCursor) {
+            cursor.setVirtualCursorMode(wantCursor)
         }
         cursor.getCursorDrawerDelegate()?.let {
             if (it.canHandleBackNavigation()) it.handleBackNavigation()
@@ -1239,6 +1240,22 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
     private fun onPageVideosChanged(videos: List<PageVideo>) {
         vb.vActionBar.setPageVideoCount(videos.size)
         vb.vVideosPanel.render(videos)
+    }
+
+    /**
+     * The hotkey (Menu by default) flips the shown tab between the virtual cursor and the direct
+     * navigation mode. Does nothing while a video takes the D-pad (the fullscreen video or the player).
+     */
+    override fun toggleNavigationMode() {
+        if (takesDpad()) return
+        val cursor = controller.currentTab.value?.webEngine?.virtualCursor ?: return
+        val toCursor = !cursor.isVirtualCursorMode()
+        cursor.setVirtualCursorMode(toCursor)
+        NotificationView.show(
+            vb.rlRoot,
+            if (toCursor) R.drawable.ic_remote else R.drawable.ic_dpad_mode,
+            activity.getString(if (toCursor) R.string.navigation_mode_cursor_on else R.string.navigation_mode_direct_on)
+        )
     }
 
     private fun onCursorModesChanged(modes: CursorModes) {

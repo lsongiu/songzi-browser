@@ -23,4 +23,6 @@ interface BrowserCommands {
     fun closeTab()
     /** Shows the tab [offset] places from the current one, going round the ends */
     fun switchTab(offset: Int)
+    /** Switches the current tab between the virtual cursor and the direct navigation mode */
+    fun toggleNavigationMode()
 }

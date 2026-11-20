@@ -119,6 +119,7 @@ class ShortcutMgr @VisibleForTesting internal constructor(private val prefs: Sha
             Shortcut.MEDIA_STOP -> commands.stopPlayback()
             Shortcut.MEDIA_REWIND -> commands.rewind()
             Shortcut.MEDIA_FAST_FORWARD -> commands.fastForward()
+            Shortcut.TOGGLE_NAVIGATION_MODE -> commands.toggleNavigationMode()
         }
     }
 

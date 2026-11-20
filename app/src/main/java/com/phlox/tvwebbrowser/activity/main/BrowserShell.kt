@@ -69,6 +69,9 @@ interface BrowserShell {
      */
     fun takesDpad(): Boolean = false
 
+    /** Switches the current tab between the virtual cursor and the direct navigation mode (TV only) */
+    fun toggleNavigationMode() {}
+
     /** A media key of the remote (play/pause, stop, rewind, fast forward) before the page gets it; @return true if taken */
     fun onMediaCommand(command: MediaCommand): Boolean = false
 

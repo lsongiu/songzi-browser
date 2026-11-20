@@ -442,6 +442,8 @@ open class MainActivity : AppCompatActivity(), BrowserShell.Host {
             shell.showPage()
             controller.changeTab(tabs[Math.floorMod(index + offset, tabs.size)])
         }
+
+        override fun toggleNavigationMode() = shell.toggleNavigationMode()
     }
 
     override fun onDestroy() {

@@ -805,6 +805,21 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
             if (event.action == KeyEvent.ACTION_UP) downInVideoMode()
             return true
         }
+        // In cursor mode, Activity层直接接管D-pad方向键，绕过WebView独立的InputChannel。
+        // WebView (Chromium) 有自己的 InputChannel 直接从系统 InputDispatcher 拿事件，
+        // View树层（CursorLayout）拦截不住，必须在 Activity 层 return true。
+        if (event.keyCode in intArrayOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)) {
+            val cursor = controller.currentTab.value?.webEngine?.virtualCursor
+            if (cursor?.isVirtualCursorMode() == true) {
+                val engine = controller.currentTab.value?.webEngine
+                if (engine is com.phlox.tvwebbrowser.webengine.webview.WebViewWebEngine) {
+                    val consumed = engine.handleDpadKey(event)
+                    android.util.Log.d("NavDebug", "TvShell.dispatchKeyEvent: 光标模式下Activity层拦截方向键 consumed=$consumed")
+                    return true  // 无论 CursorLayout 是否消费，Activity层都要 return true 挡住WebView
+                }
+            }
+        }
         val result = videoMode.dispatchKeyEvent(event)
         if (event.keyCode in intArrayOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)) {

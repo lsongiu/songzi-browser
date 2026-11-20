@@ -385,6 +385,15 @@ class WebViewWebEngine(val tab: BrowserTab) : WebEngine, VirtualCursorSupport, S
         return cursorLayout?.cursorDrawerDelegate
     }
 
+    /**
+     * 把 D-pad 方向键直接交给 CursorLayout（绕过 View 树），由 Activity 在光标模式下调用。
+     * WebView 有独立的 InputChannel 会自己拿方向键，View 层拦截不住。
+     */
+    fun handleDpadKey(event: android.view.KeyEvent): Boolean {
+        val cl = cursorLayout ?: return false
+        return cl.dispatchKeyEvent(event)
+    }
+
     private val webViewCallback = object : WebViewEx.Callback {
         override fun getActivity(): Activity? {
             return callback?.getActivity()

@@ -67,12 +67,27 @@ class CursorLayout @JvmOverloads constructor(context: Context, attrs: AttributeS
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         Log.d("CursorLayout", "dispatchKeyEvent: $event")
 
-        if (willNotDraw()) return super.dispatchKeyEvent(event)
-
-        if (inputEventsAdapter.dispatchKeyEvent(event)) {
-            return true
+        // Direction keys are the whole D-pad: cursor mode owns them outright so the page or its
+        // video player can never intercept them (otherwise a <video> element under the cursor would
+        // seek or change volume on every press). Direct navigation passes them through.
+        val isDpadKey = event.keyCode in DPAD_KEYCODES
+        if (willNotDraw()) {
+            if (isDpadKey && event.action == KeyEvent.ACTION_DOWN) {
+                android.widget.Toast.makeText(context, "方向键→WebView（直接导航模式）", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            return super.dispatchKeyEvent(event)
         }
 
+        // cursor enabled
+        if (isDpadKey && event.action == KeyEvent.ACTION_DOWN) {
+            android.widget.Toast.makeText(context, "方向键→光标（光标模式）", android.widget.Toast.LENGTH_SHORT).show()
+        }
+        val consumed = inputEventsAdapter.dispatchKeyEvent(event)
+        if (isDpadKey) {
+            // always consumed by the cursor layer — not even ACTION_UP leaks to the page
+            return true
+        }
+        if (consumed) return true
         return super.dispatchKeyEvent(event)
     }
 
@@ -108,5 +123,12 @@ class CursorLayout @JvmOverloads constructor(context: Context, attrs: AttributeS
         }
 
         cursorDrawerDelegate.dispatchDraw(canvas)
+    }
+
+    companion object {
+        private val DPAD_KEYCODES = setOf(
+            KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
+            KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN
+        )
     }
 }

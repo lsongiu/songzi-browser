@@ -1224,7 +1224,14 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
             onCursorModesChanged(CursorModes())
             return
         }
-        val wantCursor = AppContext.provideConfig().defaultNavigationMode == Config.NavigationMode.CURSOR
+        // The home page shortcuts are plain <td onclick> cells, not focusable elements (<a>/<button>/
+        // tabindex). The WebView can't traverse them with the D-pad. Force the cursor on the home page
+        // regardless of the user's default, so shortcuts can always be clicked.
+        val tabUrl = controller.currentTab.value?.url.orEmpty()
+        val wantCursor = when {
+            tabUrl.startsWith(Config.HOME_PAGE_URL) || tabUrl == Config.HOME_URL_ALIAS -> true
+            else -> AppContext.provideConfig().defaultNavigationMode == Config.NavigationMode.CURSOR
+        }
         if (cursor.isVirtualCursorMode() != wantCursor) {
             cursor.setVirtualCursorMode(wantCursor)
         }

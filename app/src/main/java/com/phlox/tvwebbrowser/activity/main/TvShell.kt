@@ -802,10 +802,6 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode in intArrayOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
-                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)) {
-            android.util.Log.d("NavDebug", "TvShell.dispatchKeyEvent: key=${event.keyCode} action=${event.action}")
-        }
         if (vb.vPlayerScreen.dispatchPlayerKey(event)) return true
         //the Menu key (where it reaches the app) does what Down does in the video mode
         if (event.keyCode == KeyEvent.KEYCODE_MENU && videoMode.isActive && playerChoice.down != PlayerChoice.Down.CURSOR) {
@@ -814,27 +810,20 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
         }
         //a double press of OK: fullscreen of the video of the page, or back from the fullscreen view
         if (handleDoubleOk(event)) return true
-        // In cursor mode, Activity层直接接管D-pad方向键，绕过WebView独立的InputChannel。
-        // WebView (Chromium) 有自己的 InputChannel 直接从系统 InputDispatcher 拿事件，
-        // View树层（CursorLayout）拦截不住，必须在 Activity 层 return true。
+        // in the cursor mode the D-pad moves the cursor: it must not also reach the page (which would
+        // scroll it), so it is handed to the cursor layer and the activity consumes it here
         if (event.keyCode in intArrayOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)) {
             val cursor = controller.currentTab.value?.webEngine?.virtualCursor
             if (cursor?.isVirtualCursorMode() == true) {
                 val engine = controller.currentTab.value?.webEngine
                 if (engine is com.phlox.tvwebbrowser.webengine.webview.WebViewWebEngine) {
-                    val consumed = engine.handleDpadKey(event)
-                    android.util.Log.d("NavDebug", "TvShell.dispatchKeyEvent: 光标模式下Activity层拦截方向键 consumed=$consumed")
-                    return true  // 无论 CursorLayout 是否消费，Activity层都要 return true 挡住WebView
+                    engine.handleDpadKey(event)
+                    return true
                 }
             }
         }
-        val result = videoMode.dispatchKeyEvent(event)
-        if (event.keyCode in intArrayOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
-                KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)) {
-            android.util.Log.d("NavDebug", "TvShell.dispatchKeyEvent: videoMode.isActive=${videoMode.isActive} returns=$result")
-        }
-        return result
+        return videoMode.dispatchKeyEvent(event)
     }
 
     //the focus stays in the view of the page meanwhile (its fullscreen view): its cursor would take the D-pad of a pad
@@ -1398,14 +1387,16 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
         override fun handleOnBackPressed() = toggleMenu()
     }
 
-    /** Highest priority: leaves the direct navigation or the grab mode of the cursor */
+    /** Highest priority: opens the bar (so the address can be edited) in the direct navigation mode,
+     *  or leaves the grab mode of the cursor. The navigation mode itself is toggled with the MENU key. */
     private val cursorModesBackCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
-            val cursor = controller.currentTab.value?.webEngine?.virtualCursor ?: return
-            if (!cursor.isVirtualCursorMode()) {
-                cursor.setVirtualCursorMode(true)
+            val cursor = controller.currentTab.value?.webEngine?.virtualCursor
+            if (cursor != null && !cursor.isVirtualCursorMode()) {
+                //direct navigation: Back opens (or closes) the bar with the address, like in the cursor mode
+                toggleMenu()
             } else {
-                cursor.getCursorDrawerDelegate()?.handleBackNavigation()
+                cursor?.getCursorDrawerDelegate()?.handleBackNavigation()
             }
         }
     }

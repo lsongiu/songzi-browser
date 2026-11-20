@@ -256,6 +256,36 @@ function tvBroWatchMedia(send, frames) {
         report();
     }
 
+    // the center of the target media relative to the top viewport (fractions 0..1), or null:
+    // the app double-taps there so a real touch (which carries user activation) toggles the
+    // fullscreen of the site itself, instead of requestFullscreen() which has no user activation
+    window.tvBroGetVideoRect = function() {
+        try {
+            var m = target();
+            if (!m) return null;
+            var r = m.getBoundingClientRect();
+            var x = r.left, y = r.top, w = r.width, h = r.height, win = window;
+            // the media may live in a (same-origin) frame: add the offsets of its ancestor frames
+            while (win && win !== win.top) {
+                try {
+                    var parent = win.parent;
+                    if (!parent) break;
+                    var frames = parent.document.querySelectorAll('iframe, frame');
+                    var found = null;
+                    for (var i = 0; i < frames.length; i++) {
+                        if (frames[i].contentWindow === win) { found = frames[i]; break; }
+                    }
+                    if (!found) break;
+                    var fr = found.getBoundingClientRect();
+                    x += fr.left; y += fr.top;
+                    win = parent;
+                } catch (e) { break; }
+            }
+            var vw = win.innerWidth || 1, vh = win.innerHeight || 1;
+            return {fx: (x + w / 2) / vw, fy: (y + h / 2) / vh};
+        } catch (e) { return null; }
+    };
+
     if (!send) return command;
     // media events do not bubble, but the window gets them while they are captured
     var MEDIA_EVENTS = ['play', 'pause', 'ended', 'emptied', 'seeked', 'playing', 'waiting', 'ratechange',
@@ -267,11 +297,28 @@ function tvBroWatchMedia(send, frames) {
         if (e.type == 'encrypted' && encrypted) encrypted.add(t);
         if (e.type == 'timeupdate') reportTime(); else report();
     }
+    // a wheel over a media element: when the cursor reaches a screen border it scrolls the page with a
+    // wheel, and players (iQiyi) turn a wheel over the video into a volume change. Stop the wheel over
+    // media so the volume stays put; the rest of the page keeps scrolling.
+    function isInMedia(el) {
+        while (el && el.tagName) {
+            if (el.tagName == 'VIDEO' || el.tagName == 'AUDIO') return true;
+            el = el.parentElement;
+        }
+        return false;
+    }
+    function onWheel(e) {
+        if (isInMedia(e.target)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+        }
+    }
     function listen(w) {
         MEDIA_EVENTS.forEach(function(type) { w.addEventListener(type, onMediaEvent, true); });
         ['fullscreenchange', 'webkitfullscreenchange'].forEach(function(type) {
             w.addEventListener(type, report, true);
         });
+        ['wheel', 'mousewheel'].forEach(function(type) { w.addEventListener(type, onWheel, true); });
     }
     listen(window);
     if (frames) {

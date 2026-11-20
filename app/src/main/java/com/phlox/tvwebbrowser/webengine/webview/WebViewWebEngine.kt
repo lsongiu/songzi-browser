@@ -8,6 +8,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
@@ -50,6 +52,8 @@ import kotlinx.coroutines.flow.update
 import com.phlox.tvwebbrowser.widgets.cursor.CursorDrawerDelegate
 import com.phlox.tvwebbrowser.widgets.cursor.CursorLayout
 import com.phlox.tvwebbrowser.widgets.cursor.PointerMode
+import org.json.JSONException
+import org.json.JSONObject
 
 
 class WebViewWebEngine(val tab: BrowserTab) : WebEngine, VirtualCursorSupport, SiteViewSupport,
@@ -290,7 +294,46 @@ class WebViewWebEngine(val tab: BrowserTab) : WebEngine, VirtualCursorSupport, S
     }
 
     override fun toggleFullscreen() {
-        webView?.toggleMediaFullscreen()
+        val wv = webView ?: return
+        // requestFullscreen() from evaluateJavascript has no user activation, so the Fullscreen API
+        // (and sites like iQiyi) silently reject it. A real double tap carries user activation and
+        // triggers the site's own double-click-to-fullscreen. Tap at the center of the video, or of
+        // the WebView when the script reports no rect.
+        wv.evaluateJavascript("(typeof tvBroGetVideoRect === 'function') ? tvBroGetVideoRect() : null") { result ->
+            var center: Pair<Float, Float>? = null
+            if (result != null && result != "null") {
+                try {
+                    val obj = JSONObject(result)
+                    val fx = obj.optDouble("fx", Double.NaN)
+                    val fy = obj.optDouble("fy", Double.NaN)
+                    if (!fx.isNaN() && !fy.isNaN() && fx in 0.0..1.0 && fy in 0.0..1.0) {
+                        center = (fx * wv.width).toFloat() to (fy * wv.height).toFloat()
+                    }
+                } catch (e: JSONException) {
+                    // fall through to the center of the WebView
+                }
+            }
+            val (cx, cy) = center ?: (wv.width / 2f to wv.height / 2f)
+            dispatchDoubleTap(wv, cx, cy)
+        }
+    }
+
+    /** Dispatches a real double tap (two quick taps) at ([x], [y]) so the page handles it with user activation */
+    private fun dispatchDoubleTap(view: WebView, x: Float, y: Float) {
+        val t0 = SystemClock.uptimeMillis()
+        fun tap(downTime: Long, eventTime: Long, action: Int) {
+            val event = MotionEvent.obtain(downTime, eventTime, action, x, y, 0)
+            try {
+                view.dispatchTouchEvent(event)
+            } finally {
+                event.recycle()
+            }
+        }
+        tap(t0, t0, MotionEvent.ACTION_DOWN)
+        tap(t0, t0 + 40, MotionEvent.ACTION_UP)
+        val t1 = t0 + 120
+        tap(t1, t1, MotionEvent.ACTION_DOWN)
+        tap(t1, t1 + 40, MotionEvent.ACTION_UP)
     }
 
     override fun find(text: String) {
@@ -390,8 +433,8 @@ class WebViewWebEngine(val tab: BrowserTab) : WebEngine, VirtualCursorSupport, S
     }
 
     /**
-     * 把 D-pad 方向键直接交给 CursorLayout（绕过 View 树），由 Activity 在光标模式下调用。
-     * WebView 有独立的 InputChannel 会自己拿方向键，View 层拦截不住。
+     * Hands a D-pad key straight to the [CursorLayout] (bypassing the view tree), called by the
+     * activity in the cursor mode so the D-pad moves the cursor without also scrolling the page.
      */
     fun handleDpadKey(event: android.view.KeyEvent): Boolean {
         val cl = cursorLayout ?: return false

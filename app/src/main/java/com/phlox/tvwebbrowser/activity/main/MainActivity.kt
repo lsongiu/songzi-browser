@@ -766,10 +766,6 @@ open class MainActivity : AppCompatActivity(), BrowserShell.Host {
         val joystickRouter = JoystickDpadRouter({ shell.takesDpad() }, localCallback::dispatchGenericMotionEvent)
         window.callback = object : Window.Callback by localCallback {
             override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-                if (event.keyCode in intArrayOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
-                        KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)) {
-                    android.util.Log.d("NavDebug", "MainActivity.dispatchKeyEvent: key=${event.keyCode} action=${event.action}")
-                }
                 //Log.d(TAG, "dispatchKeyEvent event: $event")
                 backNavigationEventsAdapter.dispatchKeyEvent(event)
 

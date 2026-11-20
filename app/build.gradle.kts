@@ -104,6 +104,15 @@ android {
     }
 }
 
+// a fixed name for every built APK (the version/hash were changing the name on every build)
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("songzi-browser.apk")
+        }
+    }
+}
+
 ksp {
     // exported schemas are used by migration tests
     arg("room.schemaLocation", "$projectDir/schemas")

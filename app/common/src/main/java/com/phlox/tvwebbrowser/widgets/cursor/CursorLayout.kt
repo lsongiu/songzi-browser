@@ -3,7 +3,6 @@ package com.phlox.tvwebbrowser.widgets.cursor
 import android.content.Context
 import android.graphics.Canvas
 import android.util.AttributeSet
-import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewConfiguration
@@ -65,23 +64,15 @@ class CursorLayout @JvmOverloads constructor(context: Context, attrs: AttributeS
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        Log.d("CursorLayout", "dispatchKeyEvent: $event")
-
         // Direction keys are the whole D-pad: cursor mode owns them outright so the page or its
         // video player can never intercept them (otherwise a <video> element under the cursor would
         // seek or change volume on every press). Direct navigation passes them through.
         val isDpadKey = event.keyCode in DPAD_KEYCODES
         if (willNotDraw()) {
-            if (isDpadKey && event.action == KeyEvent.ACTION_DOWN) {
-                android.widget.Toast.makeText(context, "方向键→WebView（直接导航模式）", android.widget.Toast.LENGTH_SHORT).show()
-            }
             return super.dispatchKeyEvent(event)
         }
 
         // cursor enabled
-        if (isDpadKey && event.action == KeyEvent.ACTION_DOWN) {
-            android.widget.Toast.makeText(context, "方向键→光标（光标模式）", android.widget.Toast.LENGTH_SHORT).show()
-        }
         val consumed = inputEventsAdapter.dispatchKeyEvent(event)
         if (isDpadKey) {
             // always consumed by the cursor layer — not even ACTION_UP leaks to the page
@@ -92,8 +83,6 @@ class CursorLayout @JvmOverloads constructor(context: Context, attrs: AttributeS
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
-        Log.d("CursorLayout", "dispatchGenericMotionEvent: $event")
-
         if (willNotDraw()) return super.dispatchGenericMotionEvent(event)
 
         if (inputEventsAdapter.dispatchGenericMotionEvent(event)) {

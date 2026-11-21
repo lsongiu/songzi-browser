@@ -268,14 +268,6 @@ class AppSettingsStore(
         }
     override var cursorSpeed: Int by config::cursorMaxSpeedPercent
     override var cursorAcceleration: Int by config::cursorAccelerationPercent
-    override var defaultNavigationMode: Config.NavigationMode
-        get() = config.defaultNavigationMode
-        set(value) {
-            config.defaultNavigationMode = value
-            //apply to the current tab at once, so the user sees the change without switching tabs
-            controller.currentTab.value?.webEngine?.virtualCursor
-                ?.setVirtualCursorMode(value == Config.NavigationMode.CURSOR)
-        }
     override fun bindingsOf(shortcut: Shortcut): List<KeyBinding> = shortcuts.bindingsOf(shortcut)
 
     override suspend fun clearCache() = WebEngineFactory.clearCache(AppContext.get())

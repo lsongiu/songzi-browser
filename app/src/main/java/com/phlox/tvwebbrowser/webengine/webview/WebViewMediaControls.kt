@@ -29,8 +29,9 @@ import org.json.JSONObject
  * The media keys of the remote. `media_controls.js` runs in every frame (players of other sites are mostly in
  * iframes, `webview_media.js` starts it) and reports the media of the frame that its commands go to, to
  * [CHANNEL]; a command goes to the frame [MediaFrames] chooses, through the reply proxy of that frame, so pages
- * can not send commands to the players of other frames. WebViews without these features get the script in the
- * main frame only, after the page loads, and report no state.
+ * can not send commands to the players of other frames. A WebView without the message listener still gets the
+ * input guards of the script early, but reports no state; one without document-start scripts gets the script
+ * in the main frame only, after the page loads.
  */
 internal class WebViewMediaControls(private val webView: WebView, private val onStateChanged: (MediaState?) -> Unit,
                                     private val onVideosChanged: (List<PageVideo>) -> Unit,
@@ -47,16 +48,19 @@ internal class WebViewMediaControls(private val webView: WebView, private val on
     }
     /** The videos other apps can play, also reported by the script of each frame (page_videos.js) */
     private val videos: PageVideoList<JavaScriptReplyProxy> = PageVideoList(playlists = playlists::get)
-    private val allFrames = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) &&
-            WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
+    private val documentStart = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
+    private val messageListener = WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)
     private var state: MediaState? = null
 
     init {
-        if (allFrames) {
-            //the object is there before the script of a new document runs
+        //the channel and the document start script need different features: a WebView without the
+        //listener still gets the guards of the script early (it reports no state there)
+        if (messageListener) {
             WebViewCompat.addWebMessageListener(webView, CHANNEL, setOf("*")) { _, message, _, _, replyProxy ->
                 onState(message.data, replyProxy)
             }
+        }
+        if (documentStart) {
             WebViewCompat.addDocumentStartJavaScript(webView, script(webView.context), setOf("*"))
         }
     }
@@ -132,7 +136,8 @@ internal class WebViewMediaControls(private val webView: WebView, private val on
     fun close() = scope.cancel()
 
     fun onPageFinished() {
-        if (!allFrames) webView.evaluateJavascript(script(webView.context), null)
+        //a WebView without document-start scripts gets them after the page loads (the main frame only)
+        if (!documentStart) webView.evaluateJavascript(script(webView.context), null)
     }
 
     companion object {

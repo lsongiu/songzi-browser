@@ -111,7 +111,6 @@ class SettingsNavigatorTest {
         override var joystickNavigation = true
         override var cursorSpeed = 100
         override var cursorAcceleration = 100
-        override var defaultNavigationMode = Config.NavigationMode.CURSOR
         override fun bindingsOf(shortcut: Shortcut) = shortcut.defaultBindings.toList()
         var cacheCleared = false
         override suspend fun clearCache() { cacheCleared = true }

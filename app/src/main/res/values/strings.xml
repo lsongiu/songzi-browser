@@ -391,7 +391,7 @@
     <string name="navigate_forward">Navigate forward</string>
     <string name="toggle_keep_screen_on">Keep screen on</string>
     <string name="direct_navigation_mode_title">Direct navigation mode</string>
-    <string name="direct_navigation_mode_message">Direct navigation hides the on-screen cursor and sends keys from your remote or game controller straight to the web page, so sites that support TV or keyboard focus can highlight links and controls.\n\nTo toggle this mode: press Menu on your TV remote, or press and hold the B button on a game controller. Press Back to open the address bar.\n\nThis mode works best with the WebView engine: WebView supports moving focus through the page with the D-pad.</string>
+    <string name="direct_navigation_mode_message">Direct navigation hides the on-screen cursor and sends keys from your remote or game controller straight to the web page, so sites that support TV or keyboard focus can highlight links and controls.\n\nTo exit this mode: press Back on your TV remote, or press and hold the B button on a game controller.\n\nThis mode works best with the WebView engine: WebView supports moving focus through the page with the D-pad.</string>
     <string name="theme">Theme</string>
     <string name="interface_mode">Interface</string>
     <!-- the order of Config.InterfaceMode -->
@@ -636,7 +636,7 @@
     <string name="navigation_mode_cursor">Cursor</string>
     <string name="navigation_mode_direct">D-pad</string>
     <string name="navigation_mode_cursor_on">Cursor mode</string>
-    <string name="navigation_mode_direct_on">D-pad mode · Menu toggles the cursor</string>
+    <string name="navigation_mode_direct_on">D-pad mode · Back returns to the cursor</string>
     <string name="shortcut_toggle_navigation_mode">Switch navigation mode</string>
     <string name="settings_group_keys">Keys of the remote</string>
     <string name="settings_press_key">Press a key on the remote to add it to this action. Hold it to add a long press</string>

@@ -286,6 +286,112 @@ function tvBroWatchMedia(send, frames) {
         } catch (e) { return null; }
     };
 
+    // iQiyi's PC player maps ArrowUp/ArrowDown to its own volume, and the D-pad of a TV remote is how the
+    // page is navigated: a held key (in the direct navigation mode) drives the in-page volume to 0, where
+    // the volume keys of the TV can not bring it back. Keep the keys from the page, but not from the
+    // browser: without preventDefault they still scroll (or move the focus) as usual.
+    function isIQiyi() {
+        return /(^|\.)(iqiyi|qiyi)\.com$/.test(location.hostname);
+    }
+    // the top page of a player frame may be another origin: its referrer tells the page
+    function isIQiyiWatchPage() {
+        var path = location.pathname;
+        try {
+            path = top.location.pathname;
+        } catch (e) {
+            try { path = new URL(document.referrer).pathname; } catch (e2) { /* keep this frame's */ }
+        }
+        return /\/v_[^/]+\.html/.test(path);
+    }
+    function hasIQiyiPlayer(doc) {
+        return !!(doc.querySelector('.iqp-player') || doc.getElementById('outlayer'));
+    }
+    function isTextInput(el) {
+        if (!el) return false;
+        var tag = (el.tagName || '').toLowerCase();
+        return tag == 'input' || tag == 'textarea' || tag == 'select' || el.isContentEditable;
+    }
+    function onIQiyiKey(e) {
+        // keyCode too: older WebViews name the keys "Up"/"Down"
+        if (e.key != 'ArrowUp' && e.key != 'ArrowDown' && e.keyCode != 38 && e.keyCode != 40) return;
+        if (e.isTrusted === false || isTextInput(e.target)) return;
+        var doc = e.target && e.target.ownerDocument || document;
+        if (!hasIQiyiPlayer(doc) && !isIQiyiWatchPage()) return;
+        e.stopImmediatePropagation();
+    }
+    // The player's volume lives in the page and starts at 20%, so the volume keys of the TV (which
+    // work on the system) can not bring it back from a value the remote has driven down. Start it at
+    // 100% and repair a low value left by the bug once; later changes of the user are kept.
+    function repairIQiyiVolume() {
+        try {
+            var key = 'QiyiPlayerVoice', flag = 'tvBroIQiyiVolumeRepaired';
+            if (localStorage.getItem(flag) != null) return;
+            var value = localStorage.getItem(key);
+            var volume = value == null ? NaN : parseFloat(value);
+            if (value == null || isNaN(volume) || (volume >= 0 && volume <= 0.2)) localStorage.setItem(key, '1');
+            localStorage.setItem(flag, '1');
+        } catch (e) { /* storage may be denied or a frame may be sandboxed */ }
+    }
+    if (isIQiyi()) {
+        repairIQiyiVolume();
+        ['keydown', 'keyup'].forEach(function(type) { window.addEventListener(type, onIQiyiKey, true); });
+    }
+
+    // a wheel over a media element: when the cursor reaches a screen border it scrolls the page with a
+    // wheel, and players (iQiyi) turn a wheel over the video into a volume change. Stop the players from
+    // getting the wheel, but let the page scroll under it when the wheel is not over the media itself.
+    function isInMedia(el) {
+        while (el && el.tagName) {
+            if (el.tagName == 'VIDEO' || el.tagName == 'AUDIO') return true;
+            el = el.parentElement;
+        }
+        return false;
+    }
+    // a player often puts its own elements over the video, so the target alone does not tell that the
+    // wheel is over it
+    function isOverMedia(doc, x, y) {
+        var view = doc.defaultView || window;
+        var vw = view.innerWidth || 1;
+        var vh = view.innerHeight || 1;
+        function inside(r) {
+            return r.width > 0 && r.height > 0 &&
+                x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+        }
+        // the player covers its overlay elements and control bar, which the target alone does not tell;
+        // a preview tile of a list is no such player (the cursor scrolls the page over it)
+        var players = doc.querySelectorAll('.iqp-player');
+        var outlayer = doc.getElementById('outlayer');
+        if (outlayer) players = Array.prototype.slice.call(players).concat(outlayer);
+        for (var i = 0; i < players.length; i++) {
+            var r = players[i].getBoundingClientRect();
+            if (r.width >= vw * 0.3 && r.height >= vh * 0.2 && inside(r)) return true;
+        }
+        // another player markup: the largest video of a watch page (a preview is small)
+        if (!isIQiyiWatchPage()) return false;
+        var videos = doc.querySelectorAll('video'), best = null, bestArea = 0;
+        for (var j = 0; j < videos.length; j++) {
+            var r = videos[j].getBoundingClientRect();
+            var area = r.width * r.height;
+            if (area > bestArea) { bestArea = area; best = r; }
+        }
+        return best ? inside(best) : false;
+    }
+    function onWheel(e) {
+        var doc = e.target && e.target.ownerDocument || document;
+        if (isInMedia(e.target)) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+        } else if (isIQiyi() && isOverMedia(doc, e.clientX, e.clientY)) {
+            // the player turns this wheel into a volume change: keep it from the page, but let the
+            // browser scroll the page (no preventDefault), or the cursor would be stuck over the player
+            e.stopImmediatePropagation();
+        }
+    }
+    // the guards need no channel of the app: an old WebView (no send) gets them too; a wheel listener
+    // on the window would be passive and its preventDefault ignored without the option
+    var WHEEL_LISTENER = { capture: true, passive: false };
+    ['wheel', 'mousewheel'].forEach(function(type) { window.addEventListener(type, onWheel, WHEEL_LISTENER); });
+
     if (!send) return command;
     // media events do not bubble, but the window gets them while they are captured
     var MEDIA_EVENTS = ['play', 'pause', 'ended', 'emptied', 'seeked', 'playing', 'waiting', 'ratechange',
@@ -297,28 +403,16 @@ function tvBroWatchMedia(send, frames) {
         if (e.type == 'encrypted' && encrypted) encrypted.add(t);
         if (e.type == 'timeupdate') reportTime(); else report();
     }
-    // a wheel over a media element: when the cursor reaches a screen border it scrolls the page with a
-    // wheel, and players (iQiyi) turn a wheel over the video into a volume change. Stop the wheel over
-    // media so the volume stays put; the rest of the page keeps scrolling.
-    function isInMedia(el) {
-        while (el && el.tagName) {
-            if (el.tagName == 'VIDEO' || el.tagName == 'AUDIO') return true;
-            el = el.parentElement;
-        }
-        return false;
-    }
-    function onWheel(e) {
-        if (isInMedia(e.target)) {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-        }
-    }
     function listen(w) {
         MEDIA_EVENTS.forEach(function(type) { w.addEventListener(type, onMediaEvent, true); });
         ['fullscreenchange', 'webkitfullscreenchange'].forEach(function(type) {
             w.addEventListener(type, report, true);
         });
-        ['wheel', 'mousewheel'].forEach(function(type) { w.addEventListener(type, onWheel, true); });
+        ['wheel', 'mousewheel'].forEach(function(type) { w.addEventListener(type, onWheel, WHEEL_LISTENER); });
+        // frames without the script of their own (about:blank, about:srcdoc) get the guard too
+        if (isIQiyi()) {
+            ['keydown', 'keyup'].forEach(function(type) { w.addEventListener(type, onIQiyiKey, true); });
+        }
     }
     listen(window);
     if (frames) {

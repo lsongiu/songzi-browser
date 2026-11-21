@@ -38,8 +38,6 @@ class Config(val prefs: SharedPreferences, private val credentialsPrefs: SharedP
         const val CURSOR_ACCELERATION_PERCENT_KEY = "cursor_acceleration_percent"
         const val CURSOR_PHYSICS_PERCENT_MIN = 25
         const val CURSOR_PHYSICS_PERCENT_MAX = 200
-        /** Which navigation mode a newly shown tab starts in: the virtual cursor or direct (D-pad to the page) */
-        const val DEFAULT_NAVIGATION_MODE_KEY = "default_navigation_mode"
         const val INCOGNITO_MODE_KEY = "incognito_mode"
         const val INCOGNITO_MODE_HINT_SUPPRESS_KEY = "incognito_mode_hint_suppress"
         /** "Don't show again" of the dialog that told about the built-in player before its toast ([builtInPlayerIntroShown]) */
@@ -177,14 +175,6 @@ class Config(val prefs: SharedPreferences, private val credentialsPrefs: SharedP
         AUTO, TV, PHONE
     }
 
-    /** How the D-pad controls the page when a tab is shown: the virtual cursor or direct navigation */
-    enum class NavigationMode {
-        /** The on-screen cursor is moved with the D-pad (the default) */
-        CURSOR,
-        /** The cursor is hidden and the D-pad keys go straight to the page */
-        DIRECT
-    }
-
     enum class HomePageMode {
         HOME_PAGE, SEARCH_ENGINE, CUSTOM, BLANK
     }
@@ -294,13 +284,6 @@ class Config(val prefs: SharedPreferences, private val credentialsPrefs: SharedP
                 CURSOR_ACCELERATION_PERCENT_KEY,
                 value.coerceIn(CURSOR_PHYSICS_PERCENT_MIN, CURSOR_PHYSICS_PERCENT_MAX)
             ).apply()
-        }
-
-    /** The navigation mode a newly shown tab starts in (the cursor by default) */
-    var defaultNavigationMode: NavigationMode
-        get() = NavigationMode.entries.getOrElse(prefs.getInt(DEFAULT_NAVIGATION_MODE_KEY, 0)) { NavigationMode.CURSOR }
-        set(value) {
-            prefs.edit().putInt(DEFAULT_NAVIGATION_MODE_KEY, value.ordinal).apply()
         }
 
     var theme = object : ObservableValue<Theme>(Theme.SYSTEM) {

@@ -609,6 +609,11 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
         playerChoice.builtInPlayerPreferred = controller.prefersBuiltInPlayer(controller.currentTabState.value.host)
         playerChoice.setFullscreen(fullscreen)
         updatePageCovered()
+        //the fullscreen view that had the focus is gone: the focus goes back to the page at once, so the
+        //cursor takes the D-pad again and the presses of OK reach it (no press is lost in between)
+        if (!fullscreen && !vb.vPlayerScreen.isOpen) {
+            controller.currentTab.value?.webEngine?.getView()?.requestFocus()
+        }
     }
 
     /** The remote controls the video of the fullscreen view */
@@ -811,12 +816,14 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
         //a double press of OK: fullscreen of the video of the page, or back from the fullscreen view
         if (handleDoubleOk(event)) return true
         // in the cursor mode the D-pad moves the cursor: it must not also reach the page (which would
-        // scroll it), so it is handed to the cursor layer and the activity consumes it here
+        // scroll it), so it is handed to the cursor layer and the activity consumes it here. Only while
+        // the page itself has the focus: the bar, a menu, a panel or a screen takes the D-pad then, and
+        // a cursor hidden with the page would swallow the presses and leave them impossible to operate.
         if (event.keyCode in intArrayOf(KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_DPAD_RIGHT,
                 KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN)) {
-            val cursor = controller.currentTab.value?.webEngine?.virtualCursor
-            if (cursor?.isVirtualCursorMode() == true) {
-                val engine = controller.currentTab.value?.webEngine
+            val engine = controller.currentTab.value?.webEngine
+            val cursor = engine?.virtualCursor
+            if (cursor?.isVirtualCursorMode() == true && !videoMode.isActive && isPageFocused()) {
                 if (engine is com.phlox.tvwebbrowser.webengine.webview.WebViewWebEngine) {
                     engine.handleDpadKey(event)
                     return true
@@ -824,6 +831,18 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
             }
         }
         return videoMode.dispatchKeyEvent(event)
+    }
+
+    /** Whether the page (the container of the engine views) holds the focus, not the bar or an overlay */
+    private fun isPageFocused(): Boolean {
+        if (!vb.flWebViewContainer.isVisible) return false
+        val focused = activity.currentFocus ?: return true
+        var view: View? = focused
+        while (view != null) {
+            if (view === vb.flWebViewContainer) return true
+            view = view.parent as? View
+        }
+        return false
     }
 
     //the focus stays in the view of the page meanwhile (its fullscreen view): its cursor would take the D-pad of a pad
@@ -842,21 +861,27 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
         if (event.keyCode !in OK_KEYCODES) return false
         if (event.action == KeyEvent.ACTION_UP) return swallowedOkKeys.remove(event.keyCode)
         if (event.action != KeyEvent.ACTION_DOWN || event.repeatCount > 0) return false
+        //a new press ends whatever was swallowed before: its up may never have come (the fullscreen
+        //view changed under the press), and a stale key would swallow the up of this press too, leaving
+        //the cursor pressed and the page deaf to the next presses
+        swallowedOkKeys.remove(event.keyCode)
         val now = SystemClock.elapsedRealtime()
         val second = now - lastOkPressAt <= DOUBLE_OK_MS
         lastOkPressAt = now
         if (!second) return false
-        val engine = controller.currentTab.value?.takeIf { it.isWebEngineCreated }?.webEngine
-        when {
+        val engine = controller.currentTab.value?.takeIf { it.isWebEngineCreated }?.webEngine ?: return false
+        //only in the direct navigation mode: there OK does not go to the page as it is, and a cursor is
+        //not there to click the button of the fullscreen. With the cursor the presses are all its own,
+        //so a quick second click of the user is never taken for this shortcut
+        if (engine.virtualCursor?.isVirtualCursorMode() != false) return false
+        if (fullscreen) {
             //the fullscreen view of the page: Back to the page (a press of OK toggled the playback)
-            fullscreen -> engine?.hideFullscreenView()
-            //direct navigation: the video of the page fills the screen, or the fullscreen view closes
-            engine?.virtualCursor?.isVirtualCursorMode() == false -> {
-                val playback = engine.mediaPlayback ?: return false
-                if (playback.mediaState.value == null) return false
-                playback.toggleFullscreen()
-            }
-            else -> return false
+            engine.hideFullscreenView()
+        } else {
+            //the video of the page fills the screen
+            val playback = engine.mediaPlayback ?: return false
+            if (playback.mediaState.value == null) return false
+            playback.toggleFullscreen()
         }
         swallowedOkKeys.add(event.keyCode)
         lastOkPressAt = 0
@@ -1280,16 +1305,10 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
             onCursorModesChanged(CursorModes())
             return
         }
-        // The home page shortcuts are plain <td onclick> cells, not focusable elements (<a>/<button>/
-        // tabindex). The WebView can't traverse them with the D-pad. Force the cursor on the home page
-        // regardless of the user's default, so shortcuts can always be clicked.
-        val tabUrl = controller.currentTab.value?.url.orEmpty()
-        val wantCursor = when {
-            tabUrl.startsWith(Config.HOME_PAGE_URL) || tabUrl == Config.HOME_URL_ALIAS -> true
-            else -> AppContext.provideConfig().defaultNavigationMode == Config.NavigationMode.CURSOR
-        }
-        if (cursor.isVirtualCursorMode() != wantCursor) {
-            cursor.setVirtualCursorMode(wantCursor)
+        // A newly shown tab always starts in the cursor mode. The navigation mode changes only when
+        // the user does it (the Menu hotkey or the D-pad button of the cursor menu), never on its own.
+        if (!cursor.isVirtualCursorMode()) {
+            cursor.setVirtualCursorMode(true)
         }
         cursor.getCursorDrawerDelegate()?.let {
             if (it.canHandleBackNavigation()) it.handleBackNavigation()
@@ -1387,14 +1406,14 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
         override fun handleOnBackPressed() = toggleMenu()
     }
 
-    /** Highest priority: opens the bar (so the address can be edited) in the direct navigation mode,
-     *  or leaves the grab mode of the cursor. The navigation mode itself is toggled with the MENU key. */
+    /** Highest priority: leaves the direct navigation mode (back to the cursor) or the grab mode of
+     *  the cursor. The navigation mode itself is toggled with the MENU key. */
     private val cursorModesBackCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
             val cursor = controller.currentTab.value?.webEngine?.virtualCursor
             if (cursor != null && !cursor.isVirtualCursorMode()) {
-                //direct navigation: Back opens (or closes) the bar with the address, like in the cursor mode
-                toggleMenu()
+                //direct navigation: Back returns to the cursor, not to the bar (the next Back opens it)
+                cursor.setVirtualCursorMode(true)
             } else {
                 cursor?.getCursorDrawerDelegate()?.handleBackNavigation()
             }

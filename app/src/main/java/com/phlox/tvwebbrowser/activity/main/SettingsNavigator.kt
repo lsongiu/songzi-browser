@@ -49,7 +49,7 @@ class SettingsNavigator(
         CHANNEL_BOOKMARKS, CHANNEL_BOOKMARKS_SOURCE, CHANNEL_TABS, CHANNEL_DOWNLOADS,
         SITE_VIEW, USER_AGENT, USER_AGENT_STRING, AUTOPLAY, AD_BLOCK, TRACKING_PROTECTION, FILTER_LIST, REGIONAL_LIST, CUSTOM_LIST, UPDATE_LISTS, VIDEO_PLAYER, VIDEO_HINT,
         INTERFACE, THEME, DARKENING, KEEP_SCREEN_ON, MATCH_FRAME_RATE,
-        CURSOR_SPEED, CURSOR_ACCELERATION, DEFAULT_NAVIGATION_MODE, JOYSTICK, SHORTCUT,
+        CURSOR_SPEED, CURSOR_ACCELERATION, JOYSTICK, SHORTCUT,
         CLEAR_CACHE, ENGINE_DEBUG, HISTORY_RETENTION, DOWNLOAD_FOLDER, PROXY, PROXY_TYPE, PROXY_HOST, PROXY_PORT, PROXY_USERNAME, PROXY_PASSWORD,
         INFO, INFO_ATTRIBUTION, UPDATE, AUTO_UPDATE, UPDATE_CHANNEL,
         LINK_SOURCE, LINK_SUPPORT, LINK_ICON, LINK_LICENSE, LINK_PRIVACY, NOTICE
@@ -155,8 +155,6 @@ class SettingsNavigator(
         var joystickNavigation: Boolean
         var cursorSpeed: Int
         var cursorAcceleration: Int
-        /** The navigation mode a newly shown tab starts in */
-        var defaultNavigationMode: Config.NavigationMode
         fun bindingsOf(shortcut: Shortcut): List<KeyBinding>
 
         suspend fun clearCache()
@@ -512,7 +510,6 @@ class SettingsNavigator(
             Key.INTERFACE -> store.interfaceMode = Config.InterfaceMode.entries[index]
             Key.THEME -> store.theme = Config.Theme.entries[index]
             Key.HISTORY_RETENTION -> store.historyRetention = Config.HistoryRetention.entries[index]
-            Key.DEFAULT_NAVIGATION_MODE -> store.defaultNavigationMode = Config.NavigationMode.entries[index]
             Key.PROXY_TYPE -> {
                 val type = ProxySettings.Type.entries.getOrNull(index) ?: return
                 if (type == store.proxyType) return
@@ -1050,10 +1047,6 @@ class SettingsNavigator(
         val min = Config.CURSOR_PHYSICS_PERCENT_MIN
         val max = Config.CURSOR_PHYSICS_PERCENT_MAX
         val cursor = listOf(
-            Row.Choice(Key.DEFAULT_NAVIGATION_MODE, string(R.string.settings_default_navigation_mode),
-                string(R.string.settings_default_navigation_mode_summary),
-                listOf(string(R.string.navigation_mode_cursor), string(R.string.navigation_mode_direct)),
-                store.defaultNavigationMode.ordinal, segmented = true),
             Row.Slider(Key.CURSOR_SPEED, string(R.string.settings_cursor_speed), string(R.string.settings_cursor_speed_summary),
                 store.cursorSpeed, min, max, context.getString(R.string.settings_percent, store.cursorSpeed)),
             Row.Slider(Key.CURSOR_ACCELERATION, string(R.string.settings_cursor_acceleration),

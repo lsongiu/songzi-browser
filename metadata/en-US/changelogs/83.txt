@@ -1,15 +1,13 @@
-* Major redesign
-* GeckoView based version extracted to separate app variant
-* Cursor behavior improvements
-* Mobile/Desktop view for pages
-* New ad blocker optimized for TV
-* Resumable downloads, custom downloads folder
-* Export and import bookmarks, bookmark folders
-* Embedded optimized video player
-* Support for HTTP proxy
-* New languages support
-* Integrated Qwant and selected as default search engine for several regions
-* Updated dependencies
-* Target latest Android versions
-* Bugfixes, optimizations, many other UI improvements
-* v3.0.x: multiple usability and bug fixes
+3.0.5 — based on TV Bro 3.0.x
+
+- Redesigned interface optimized for TV screens
+- Improved virtual cursor; fixed repeated-click issues on video pages and returning to cursor mode
+- Desktop / mobile site view per site
+- New TV-optimized ad blocker
+- Resumable downloads and custom download folder
+- Bookmark folders with HTML import/export
+- Built-in video player with quality, audio, subtitle and speed controls
+- HTTP proxy support
+- Chinese home page with Bilibili, iQiyi, Tencent Video, Youku, Mango TV, CCTV Video, Xigua Video and Douban Movie
+- Site players kept for Chinese streaming sites (MSE / DRM)
+- Updated dependencies, latest Android targets, bug fixes and UI polish

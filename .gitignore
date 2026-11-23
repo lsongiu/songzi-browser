@@ -10,3 +10,7 @@
 /buildSrc/build
 /docs/adblock-plan.md
 /tools/adblock-corpus/*.tsv
+/.trae/
+/.workbuddy/
+hs_err_pid*.log
+replay_pid*.log

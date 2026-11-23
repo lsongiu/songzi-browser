@@ -1,10 +1,27 @@
-Web browser optimised to use with TV remote.
-Features:
-- working with TV remote
-- tabs and bookmarks support
-- voice search support
-- switch user agent support
-- use Android builtin web rendering engine (WebKit/Blink based)
-- built-in download manager
-- browsing history
-- shortcuts
+A web browser designed for Android TV and TV remotes, with a home page tailored for Chinese users.
+
+Built on the open-source TV Bro project. The original copyright notice, license and disclaimer are retained. The app name, icon and package ID are independent and do not use TV Bro branding.
+
+BUILT FOR THE LIVING ROOM
+- Navigate every page with the D-pad, or use the virtual cursor for precise clicks
+- Voice search from the address bar and find-in-page
+- Fully remappable remote and keyboard shortcuts
+- Media keys control video playback
+- One APK for both TV (remote UI) and phone (touch UI)
+
+CHINESE VIDEO SITES
+- Home page shortcuts: Bilibili, iQiyi, Tencent Video, Youku, Mango TV, CCTV Video, Xigua Video, Douban Movie
+- Site player auto-selected for iQiyi, Tencent Video, Youku and Mango TV (MSE / DRM compatible)
+- Built-in Media3 player for other sites: HLS, DASH, quality/audio/subtitle/speed controls, PiP and video download
+
+FULL BROWSER FEATURES
+- Multiple tabs with long-press menu (close, new tab to the right, move left/right)
+- Bookmarks with folders, import/export, and browsing history
+- Download manager with resumable downloads and a custom folder
+- Configurable ad blocking with per-site controls and custom filter lists
+- Incognito mode, find in page, desktop/mobile site view
+- HTTP / SOCKS5 proxy support
+- Send links, searches and files to your TV from any device via a web page and QR code
+- Android TV home screen channels for bookmarks, open tabs and downloads (Android TV 8+)
+
+The app does not collect personal data or analytics. See the privacy policy in the repository for details.

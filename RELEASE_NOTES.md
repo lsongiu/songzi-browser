@@ -1,15 +1,36 @@
-* Major redesign
-* GeckoView based version extracted to separate app variant
-* Cursor behavior improvements
-* Mobile/Desktop view for pages
-* New ad blocker optimized for TV
-* Resumable downloads, custom downloads folder
-* Export and import bookmarks, bookmark folders
-* Embedded optimized video player
-* Support for HTTP proxy
-* New languages support
-* Integrated Qwant and selected as default search engine for several regions
-* Updated dependencies
-* Target latest Android versions
-* Bugfixes, optimizations, many other UI improvements
-* v3.0.x: multiple usability and bug fixes
+松子浏览器 3.0.5（基于 TV Bro）
+
+本次更新包含上游 TV Bro 3.0.x 的全部改进，以及针对电视遥控器和国内视频网站的适配：
+
+**浏览体验**
+- 全新界面设计，针对电视大屏重新排版
+- 虚拟光标行为优化：方向键移动更跟手，视频页连点失效已修复，返回键可切回光标模式
+- 页面支持桌面版 / 手机版视图切换
+- 内置针对电视优化的视频播放器，支持画质、音轨、字幕与倍速调节
+- 页内查找、搜索建议、地址栏历史联想
+
+**内容与安全**
+- 全新广告拦截引擎，支持自定义规则与按站点开关
+- HTTP / SOCKS5 代理支持
+- Safe Browsing 与错误页优化
+
+**数据与同步**
+- 下载支持断点续传与自定义目录
+- 书签支持导出 / 导入与文件夹管理
+- Android TV 主屏频道：书签、打开的标签、下载完成项（Android TV 8+）
+- 任意设备扫码"发送到电视"
+
+**本地化**
+- 首页预置哔哩哔哩、爱奇艺、腾讯视频、优酷、芒果 TV、央视频、西瓜视频、豆瓣电影
+- 国内主流视频站默认使用站点播放器，兼容 MSE / DRM
+- 中文界面与语音搜索
+
+**其他**
+- 依赖更新，适配最新 Android 版本
+- 大量问题修复、性能优化与细节打磨
+- v3.0.x：多项易用性改进与问题修复
+
+---
+
+隐私政策：https://github.com/lsongiu/songzi-browser/blob/master/PRIVACY.md
+问题反馈：https://github.com/lsongiu/songzi-browser/issues

@@ -1,1 +1,1 @@
-Simple web browser optimized to use with TV remote
+TV browser optimized for remote control, with Chinese video sites and voice search

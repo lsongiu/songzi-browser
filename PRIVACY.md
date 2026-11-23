@@ -1,56 +1,56 @@
-### Privacy policy ###
+# 松子浏览器隐私政策
 
-**Last updated:** November 10, 2026
+**最后更新：2026 年 11 月 23 日**
 
-This policy describes how **TV Bro** (“the application”) handles information. The application is open-source software. The primary author is **Fedir Tsapana**. Development may also involve a **changing set of voluntary contributors**; you can see the current list on the [GitHub contributors page](https://github.com/truefedex/tv-bro/graphs/contributors).
-
----
-
-#### Information the application collects ####
-
-The current version of the application **does not collect personal data** and **does not transmit analytics or usage data** from your device to us or to third-party analytics services as part of the app’s own behavior.
-
-#### Earlier versions ####
-
-**Older releases** of the application may have included **Firebase Crashlytics** (or similar crash-reporting tooling) that could send **crash diagnostics** to Google’s infrastructure. Those reports, when enabled, were handled under Google’s terms and privacy practices applicable at the time. If you use an old build, consult that build’s documentation or source to confirm what was included.
-
-#### Websites you visit ####
-
-TV Bro is a **web browser**. When you browse the internet:
-
-- **Websites, networks, and services you use** may collect, store, and process data according to **their own** privacy policies and practices.
-- **Your device, ISP, DNS provider, and other intermediaries** may see network activity when you load pages or use online services.
-- **Using the web can be risky.** You may expose passwords, payment details, location, or other sensitive information if you enter them on untrusted sites or over insecure connections.
-
-You are responsible for choosing which sites you trust and what information you share online.
-
-#### Search suggestions ####
-
-While you type in the address bar, the application sends the typed text to the **search engine chosen in the settings** (Google by default) and shows the searches it suggests. These requests go **from your device directly to the search engine**, not to us, and are handled under that search engine’s privacy policy. The application sends them **without cookies**, so they are not tied to an account you are signed in to; the search engine still sees your network address.
-
-- Text that looks like a **web address** is not sent.
-- Nothing is sent in **incognito mode**.
-- You can turn this off: **Settings → Search and home page → Search suggestions**.
-
-#### Incognito mode ####
-
-The application offers an **incognito** (or similar) mode that provides a **temporary, isolated space** for **local site data** (such as cookies and storage used by websites while that mode is active). That local data is intended to be **removed when you leave incognito mode**.
-
-**Incognito mode does not guarantee anonymity or privacy.** It does not hide your activity from websites, your network operator, or other parties that may observe traffic. It is not a substitute for careful behavior on the web.
-
-#### Children ####
-
-The application does not knowingly collect personal information from children. Parents and guardians should supervise minors’ use of any web browser.
-
-#### Changes to this policy ####
-
-We may update this policy from time to time. The **“Last updated”** date at the top will change when we do. Continued use of the application after changes means you accept the revised policy.
-
-#### Contact ####
-
-For privacy-related questions about this project, you may reach the author via the contact options linked from the official project page:  
-https://github.com/truefedex/tv-bro
+本政策说明**松子浏览器**（下称"本应用"）如何处理信息。本应用是开源软件，基于 [TV Bro](https://github.com/truefedex/tv-bro) 修改而来，原作者为 **Fedir Tsapana**，开发过程中可能有多位自愿贡献者参与，可通过项目的 [GitHub 贡献者页面](https://github.com/truefedex/tv-bro/graphs/contributors) 查看。松子浏览器由独立维护者基于上游源码定制，未使用 TV Bro 的名称、图标与包名。
 
 ---
 
-*This document is provided for transparency. It is not legal advice.*
+## 本应用收集的信息
+
+当前版本**不收集个人数据**，也**不会**在应用自身行为范围内，将分析数据或使用数据从你的设备发送给我们或第三方分析服务。
+
+## 早期版本
+
+应用的**旧版本**可能包含过 **Firebase Crashlytics** 或类似的崩溃上报工具，在启用时会向 Google 的基础设施发送**崩溃诊断信息**。此类报告当时受 Google 相应的条款与隐私政策约束。如果你使用旧版本构建，请查阅该版本的文档或源码以确认其包含的内容。
+
+## 你访问的网站
+
+本应用是一款**网页浏览器**。当你浏览互联网时：
+
+- **你使用的网站、网络和服务**可能依据**其自身**的隐私政策与实践收集、存储和处理数据。
+- **你的设备、ISP、DNS 服务商及其他中间方**可能在页面加载或使用在线服务时看到网络活动。
+- **上网存在风险**。在不信任的网站或不安全的连接上输入密码、支付信息、位置或其他敏感信息，可能导致信息泄露。
+
+选择信任哪些网站、在网上分享哪些信息，由你自行负责。
+
+## 搜索建议
+
+在地址栏输入文字时，本应用会把输入内容发送给**设置中选择的搜索引擎**（默认为 Google），以展示搜索建议。这些请求**从你的设备直接发往搜索引擎**，不经过我们，并受该搜索引擎的隐私政策约束。应用发送请求时**不带 Cookie**，因此不会与你登录的账号关联；搜索引擎仍能看到你的网络地址。
+
+- 看起来像**网址**的文字不会被发送。
+- **无痕模式**下不会发送任何内容。
+- 你可以在 **设置 → 搜索与主页 → 搜索建议** 中关闭此功能。
+
+## 无痕模式
+
+本应用提供**无痕**（或类似）模式，为**本地站点数据**（如该模式下网站使用的 Cookie 和存储）提供**临时隔离空间**。这些本地数据会在你退出无痕模式时被清除。
+
+**无痕模式不保证匿名或隐私。** 它不会向网站、网络运营商或其他可能观察流量的第三方隐藏你的活动，也不能替代谨慎的上网行为。
+
+## 儿童
+
+本应用不会有意收集儿童的个人信息。家长或监护人应监督未成年人使用任何网页浏览器。
+
+## 政策变更
+
+我们可能不时更新本政策。变更时，顶部的**"最后更新"**日期会相应调整。政策变更后继续使用本应用，即表示你接受修订后的政策。
+
+## 联系我们
+
+如对本项目的隐私相关事项有疑问，可通过项目页面提供的渠道反馈：  
+https://github.com/lsongiu/songzi-browser/issues
+
+---
+
+*本文件用于信息透明之目的，不构成法律意见。*

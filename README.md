@@ -1,5 +1,6 @@
 <div align="center">
   <img src="metadata/en-US/images/icon.png" alt="松子浏览器图标" width="112">
+  <br><sub>金色松子 + 播放三角：一颗"能看视频的松子"</sub>
 </div>
 
 # 松子浏览器（Songzi Browser）

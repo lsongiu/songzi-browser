@@ -12,5 +12,6 @@
 /tools/adblock-corpus/*.tsv
 /.trae/
 /.workbuddy/
+/docs/promotion/
 hs_err_pid*.log
 replay_pid*.log

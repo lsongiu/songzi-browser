@@ -374,21 +374,28 @@ class WebViewWebEngine(val tab: BrowserTab) : WebEngine, VirtualCursorSupport, S
         cursorLayout?.let { (it.parent as? ViewGroup)?.removeView(it) }
         callback = null
         if (completely) {
-            dropView()
+            // The tab is gone (closed, or the activity is being destroyed): the view is forgotten
+            // and its native memory (decoders, GPU surfaces, the renderer) is released for good.
+            dropView(destroy = true)
         }
     }
 
     override fun trimMemory() {
         val webView = webView
         if (webView != null && !webView.isAttachedToWindow) {
-            dropView()
+            // A background tab under memory pressure: releasing the native memory is the point of
+            // the trim, not just forgetting the view (which would leave it to the garbage collector).
+            dropView(destroy = true)
         }
     }
 
     /** Forgets the view and its cursor surface (taking them out of the window); a new one is created when needed */
-    private fun dropView() {
+    private fun dropView(destroy: Boolean) {
         cursorLayout?.let { (it.parent as? ViewGroup)?.removeView(it) }
         webView?.releaseMediaControls()
+        if (destroy) {
+            webView?.destroy()
+        }
         webView = null
         cursorLayout = null
         _mediaState.value = null
@@ -483,7 +490,7 @@ class WebViewWebEngine(val tab: BrowserTab) : WebEngine, VirtualCursorSupport, S
                 fullScreenView = null
                 callback?.onExitFullscreen()
             }
-            dropView()
+            dropView(destroy = false)
             webView.destroy()
             //a background tab gets a new view, restored from its saved state, when it is shown;
             //the current one shows the page of the crash in a new view now

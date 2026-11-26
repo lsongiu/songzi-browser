@@ -38,6 +38,11 @@ class Config(val prefs: SharedPreferences, private val credentialsPrefs: SharedP
         const val CURSOR_ACCELERATION_PERCENT_KEY = "cursor_acceleration_percent"
         const val CURSOR_PHYSICS_PERCENT_MIN = 25
         const val CURSOR_PHYSICS_PERCENT_MAX = 200
+        /** How far one tap of a direction key moves the cursor, in dp. */
+        const val CURSOR_STEP_DP_KEY = "cursor_step_dp"
+        const val CURSOR_STEP_DP_MIN = 8
+        const val CURSOR_STEP_DP_MAX = 32
+        const val CURSOR_STEP_DP_DEFAULT = 12
         const val INCOGNITO_MODE_KEY = "incognito_mode"
         const val INCOGNITO_MODE_HINT_SUPPRESS_KEY = "incognito_mode_hint_suppress"
         /** "Don't show again" of the dialog that told about the built-in player before its toast ([builtInPlayerIntroShown]) */
@@ -283,6 +288,20 @@ class Config(val prefs: SharedPreferences, private val credentialsPrefs: SharedP
             prefs.edit().putInt(
                 CURSOR_ACCELERATION_PERCENT_KEY,
                 value.coerceIn(CURSOR_PHYSICS_PERCENT_MIN, CURSOR_PHYSICS_PERCENT_MAX)
+            ).apply()
+        }
+
+    /**
+     * How far one tap of a direction key moves the virtual cursor, in dp. The cursor moves this far
+     * at once and only starts the continuous acceleration if the key stays held.
+     */
+    var cursorStepDp: Int
+        get() = prefs.getInt(CURSOR_STEP_DP_KEY, CURSOR_STEP_DP_DEFAULT)
+            .coerceIn(CURSOR_STEP_DP_MIN, CURSOR_STEP_DP_MAX)
+        set(value) {
+            prefs.edit().putInt(
+                CURSOR_STEP_DP_KEY,
+                value.coerceIn(CURSOR_STEP_DP_MIN, CURSOR_STEP_DP_MAX)
             ).apply()
         }
 

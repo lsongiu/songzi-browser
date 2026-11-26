@@ -448,6 +448,16 @@ class WebViewWebEngine(val tab: BrowserTab) : WebEngine, VirtualCursorSupport, S
         return cl.dispatchKeyEvent(event)
     }
 
+    /**
+     * Hands a press of OK straight to the [CursorLayout], called by the activity in the cursor mode:
+     * a page whose view took the focus away (a fullscreen view, a lost focus) or whose player takes
+     * Enter would otherwise never let the press reach the cursor, and the key would look dead.
+     */
+    fun handleOkKey(event: android.view.KeyEvent): Boolean {
+        val cl = cursorLayout ?: return false
+        return cl.dispatchKeyEvent(event)
+    }
+
     private val webViewCallback = object : WebViewEx.Callback {
         override fun getActivity(): Activity? {
             return callback?.getActivity()

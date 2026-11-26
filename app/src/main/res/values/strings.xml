@@ -627,6 +627,10 @@
     <string name="settings_cursor_speed_summary">The top speed while a key is held</string>
     <string name="settings_cursor_acceleration">Cursor acceleration</string>
     <string name="settings_cursor_acceleration_summary">How fast it gets to the top speed</string>
+    <string name="settings_cursor_step">Cursor step</string>
+    <string name="settings_cursor_step_summary">How far one tap of a direction key moves the cursor; holding the key moves it on</string>
+    <!-- %d: a distance in dp -->
+    <string name="settings_dp">%d dp</string>
     <!-- %d: a percent of the default -->
     <string name="settings_percent">%d%%</string>
     <string name="settings_joystick">Move the cursor with sticks</string>

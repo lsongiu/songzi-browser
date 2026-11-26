@@ -14,6 +14,8 @@ import android.view.ViewConfiguration
 import android.view.WindowManager
 import com.phlox.tvwebbrowser.AppContext
 import com.phlox.tvwebbrowser.Config
+import com.phlox.tvwebbrowser.utils.Utils
+import kotlin.math.hypot
 
 /**
  * The virtual cursor: movement, the selection keys, visibility timing, press and grab state.
@@ -115,6 +117,8 @@ class CursorDrawerDelegate(val context: Context, val surface: View, private val 
 
     /** The click key went down: a finger touches at once, a mouse waits (see [pressPending]) */
     private fun startPress() {
+        // the hack of the edges may have a drag in flight: the press is a gesture of its own
+        scroller.cancelScrollHack()
         dpadCenterPressed = true
         if (pointerMode == PointerMode.MOUSE) {
             pressPending = true
@@ -208,6 +212,7 @@ class CursorDrawerDelegate(val context: Context, val surface: View, private val 
     fun cancelActiveGestures() {
         surface.removeCallbacks(longPressRunnable)
         surface.removeCallbacks(cursorUpdateRunnable)
+        surface.removeCallbacks(startMovementRunnable)
         endPress(cancel = true)
         grabMode = false
         scroller.cancelScrollHack()
@@ -231,17 +236,21 @@ class CursorDrawerDelegate(val context: Context, val surface: View, private val 
 
     /**
      * Sets where the cursor moves: [x] and [y] in -1..1 (left and up are negative). Keys and the hat
-     * give whole steps (a diagonal is (1, 1)), a stick its deflection. The speed grows with the
-     * acceleration of the settings up to their cap and is scaled by the vector, so a new vector
-     * steers the moving cursor without stopping it; (0, 0) stops it at once. A cursor that is hidden
-     * shows again when it starts moving.
+     * give whole steps (a diagonal is (1, 1)), a stick its deflection. A [discrete] press of a
+     * direction key moves the cursor one exact step at once (see `Config.cursorStepDp`) and only
+     * starts the continuous movement if the key stays held; without it the cursor moves with the
+     * acceleration from the first frame, as a stick does. The speed grows with the acceleration of
+     * the settings up to their cap and is scaled by the vector, so a new vector steers the moving
+     * cursor without stopping it; (0, 0) stops it at once. A cursor that is hidden shows again when
+     * it starts moving.
      */
-    fun setDirection(x: Float, y: Float) {
+    fun setDirection(x: Float, y: Float, discrete: Boolean = false) {
         val newX = bound(x, 1f)
         val newY = bound(y, 1f)
         val wasMoving = cursorDirection.x != 0f || cursorDirection.y != 0f
         cursorDirection.set(newX, newY)
         if (newX == 0f && newY == 0f) {
+            surface.removeCallbacks(startMovementRunnable)
             if (wasMoving) {
                 // the next frame ends the loop and schedules the hiding
                 cursorSpeed = 0f
@@ -250,12 +259,50 @@ class CursorDrawerDelegate(val context: Context, val surface: View, private val 
             return
         }
         if (!wasMoving) {
-            // Only a start stamps the time: sticks report many times a frame, and the
-            // acceleration of a frame comes from the time since the previous one
-            lastCursorUpdate = SystemClock.uptimeMillis()
-            surface.removeCallbacks(cursorUpdateRunnable)
-            surface.post(cursorUpdateRunnable)
+            surface.removeCallbacks(startMovementRunnable)
+            if (discrete && !(grabMode && grabScrolls) && applyStep(newX, newY)) {
+                // a tap is one step; only a held key starts to accelerate
+                surface.postDelayed(startMovementRunnable, CURSOR_STEP_HOLD_DELAY)
+            } else {
+                startMovement()
+            }
         }
+    }
+
+    /** Moves the cursor one step along the direction; true if it moved */
+    private fun applyStep(directionX: Float, directionY: Float): Boolean {
+        val step = Utils.D2P(context, AppContext.provideConfig().cursorStepDp.toFloat())
+        val length = hypot(directionX, directionY)
+        if (step <= 0f || length == 0f) return false
+        val fromX = cursorPosition.x
+        val fromY = cursorPosition.y
+        cursorPosition.offset(directionX / length * step, directionY / length * step)
+        cursorPosition.x = bound(cursorPosition.x, 0f, (surface.width - 1).toFloat())
+        cursorPosition.y = bound(cursorPosition.y, 0f, (surface.height - 1).toFloat())
+        if (cursorPosition.x == fromX && cursorPosition.y == fromY) return false
+        val wasHidden = isCursorDisappear
+        // a held click key drags from where the press began
+        flushPendingPress(fromX, fromY)
+        pointer.move(cursorPosition.x, cursorPosition.y, dpadCenterPressed)
+        if (wasHidden) {
+            animateAppearing()
+        } else {
+            lastCursorUpdate = SystemClock.uptimeMillis()
+            scheduleCursorHide()
+            surface.invalidate()
+        }
+        return true
+    }
+
+    /** Starts the continuous movement of the cursor along [cursorDirection] */
+    private fun startMovement() {
+        lastCursorUpdate = SystemClock.uptimeMillis()
+        surface.removeCallbacks(cursorUpdateRunnable)
+        surface.post(cursorUpdateRunnable)
+    }
+
+    private val startMovementRunnable = Runnable {
+        if (cursorDirection.x != 0f || cursorDirection.y != 0f) startMovement()
     }
 
     /** The selection keys (a press of the cursor); directions come through [setDirection] */
@@ -273,7 +320,10 @@ class CursorDrawerDelegate(val context: Context, val surface: View, private val 
                         exitGrabMode()
                     } else {
                         surface.keyDispatcherState.startTracking(event, this)
-                        if (!isCursorDisappear && !dpadCenterPressed) {
+                        // the press works even when the cursor has hidden: the first press of OK must
+                        // click, not only show the cursor, or it looks like a dead key on a video page
+                        if (isCursorDisappear) animateAppearing()
+                        if (!dpadCenterPressed) {
                             startPress()
                             surface.postInvalidate()
                             surface.postDelayed(longPressRunnable, LONG_PRESS_TIMEOUT)
@@ -282,14 +332,12 @@ class CursorDrawerDelegate(val context: Context, val surface: View, private val 
                 } else if (event.action == KeyEvent.ACTION_UP) {
                     surface.keyDispatcherState.handleUpEvent(event)
                     surface.removeCallbacks(longPressRunnable)
-                    if (grabMode) {
-                        //nop
-                    } else if (isCursorDisappear) {
-                        lastCursorUpdate = SystemClock.uptimeMillis()
-                        surface.postInvalidate()
-                        scheduleCursorHide()
-                    } else {
+                    if (!grabMode) {
+                        // End the press even if the cursor hid while the key was held: a press left
+                        // open makes the page ignore the next clicks (its finger never came up)
+                        val wasHidden = isCursorDisappear
                         endPress(cancel = false)
+                        if (wasHidden) animateAppearing()
                         surface.postInvalidate()
                     }
                 }
@@ -466,6 +514,8 @@ class CursorDrawerDelegate(val context: Context, val surface: View, private val 
     }
 
     fun hideCursor() {
+        // the drag of the edges must not stay in the page while the cursor is away
+        scroller.cancelScrollHack()
         if (grabMode) {
             exitGrabMode()
         } else {
@@ -478,6 +528,8 @@ class CursorDrawerDelegate(val context: Context, val surface: View, private val 
 
     companion object {
         private const val CURSOR_DISAPPEAR_TIMEOUT = 5000
+        /** How long a direction key must stay held before a step turns into continuous movement */
+        private const val CURSOR_STEP_HOLD_DELAY = 350L
         //100ms more to let underlying view handle long press first
         //idea to let geckoview handle long press first (and receive ContentDelegate.onContextMenu callback)
         //and if it doesn't handle it, then we handle it as long press

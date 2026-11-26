@@ -45,6 +45,11 @@ class CursorScroller(
         if (scrollX == 0 && scrollY == 0) {
             return
         }
+        if (!allowScrollHack) {
+            // a click took the touch stream: the drag of the hack must end before it, or the page
+            // would see two gestures at once and stay deaf to the next presses
+            cancelScrollHack()
+        }
 
         // A mouse scrolls with wheel events, which need neither a gesture nor the hack
         if (pointer.scroll(cursorPosition.x, cursorPosition.y, scrollX.toFloat(), scrollY.toFloat())) {

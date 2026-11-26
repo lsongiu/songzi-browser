@@ -540,6 +540,9 @@
   <string name="settings_cursor_speed_summary">按住按键时的最高速度</string>
   <string name="settings_cursor_acceleration">光标加速度</string>
   <string name="settings_cursor_acceleration_summary">达到最高速度的快慢</string>
+  <string name="settings_cursor_step">光标步长</string>
+  <string name="settings_cursor_step_summary">方向键轻点一次移动的距离；按住则继续移动</string>
+  <string name="settings_dp">%d dp</string>
   <string name="settings_percent">%d%%</string>
   <string name="settings_joystick">用摇杆移动光标</string>
   <string name="settings_joystick_summary">游戏手柄的左摇杆可平滑地移动光标。若光标自行漂移，请关闭此项</string>

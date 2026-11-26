@@ -18,11 +18,12 @@ import kotlin.math.hypot
 @RunWith(RobolectricTestRunner::class)
 class DPADNavigationEventsAdapterTest {
     private val directions = mutableListOf<Pair<Float, Float>>()
+    private val discretePresses = mutableListOf<Boolean>()
     private val keys = mutableListOf<Int>()
     private var stickEnabled = true
     private var imeVisible = false
     private val adapter = DPADNavigationEventsAdapter(
-        onDirection = { x, y -> directions += x to y },
+        onDirection = { x, y, discrete -> directions += x to y; discretePresses += discrete },
         onKeyEvent = { keys += it.keyCode; true },
         analogStickNavigationEnabled = { stickEnabled },
         isSoftwareKeyboardVisible = { imeVisible },
@@ -220,6 +221,15 @@ class DPADNavigationEventsAdapterTest {
         press(KeyEvent.KEYCODE_DPAD_RIGHT)
         adapter.dispatchKeyEvent(key(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT, repeat = 1))
         assertDirections(1f to 0f, 1f to 0f)
+    }
+
+    @Test
+    fun aKeyPressIsDiscreteAndARepeatIsNot() {
+        press(KeyEvent.KEYCODE_DPAD_RIGHT)
+        adapter.dispatchKeyEvent(key(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_RIGHT, repeat = 1))
+        release(KeyEvent.KEYCODE_DPAD_RIGHT)
+        adapter.dispatchGenericMotionEvent(motion(x = 1f))
+        assertEquals(listOf(true, false, false, false), discretePresses)
     }
 
     @Test

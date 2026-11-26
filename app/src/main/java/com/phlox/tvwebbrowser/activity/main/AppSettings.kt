@@ -268,6 +268,7 @@ class AppSettingsStore(
         }
     override var cursorSpeed: Int by config::cursorMaxSpeedPercent
     override var cursorAcceleration: Int by config::cursorAccelerationPercent
+    override var cursorStepDp: Int by config::cursorStepDp
     override fun bindingsOf(shortcut: Shortcut): List<KeyBinding> = shortcuts.bindingsOf(shortcut)
 
     override suspend fun clearCache() = WebEngineFactory.clearCache(AppContext.get())

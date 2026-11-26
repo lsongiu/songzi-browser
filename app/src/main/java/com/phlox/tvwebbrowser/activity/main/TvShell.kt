@@ -830,6 +830,20 @@ class TvShell(private val host: BrowserShell.Host) : BrowserShell, ActionBar.Cal
                 }
             }
         }
+        // In the cursor mode a press of OK clicks at the cursor, so it goes to the cursor layer like
+        // the D-pad above: the fullscreen view of a page, a lost focus or a player that takes Enter
+        // (iQiyi and its fullscreen button) would otherwise swallow it, and the key would look dead.
+        // Not while a text field is edited: there Enter is the page's own.
+        if (event.keyCode in OK_KEYCODES && activity.currentFocus?.onCheckIsTextEditor() != true) {
+            val engine = controller.currentTab.value?.webEngine
+            val cursor = engine?.virtualCursor
+            if (cursor?.isVirtualCursorMode() == true && !videoMode.isActive && isPageFocused()) {
+                if (engine is com.phlox.tvwebbrowser.webengine.webview.WebViewWebEngine) {
+                    engine.handleOkKey(event)
+                    return true
+                }
+            }
+        }
         return videoMode.dispatchKeyEvent(event)
     }
 

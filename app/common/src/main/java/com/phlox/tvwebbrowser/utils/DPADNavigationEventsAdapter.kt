@@ -22,6 +22,8 @@ import kotlin.math.pow
  * - **D-pad.** The direction keys held (remotes, keyboards, game controllers whose D-pad sends
  *   keys) and the hats of game controllers (the D-pad of most pads, reported as motion), whole
  *   steps: a diagonal key or two keys give (±1, ±1). Releasing one of two keys leaves the other.
+ *   A press of a direction key is reported as discrete ([onDirection] `discrete` is true), so the
+ *   cursor can move one exact step at once instead of accelerating from the first frame.
  * - **Stick.** The left sticks of game controllers, analog: the deflection past a round dead zone,
  *   rescaled to start at 0, with a response curve that leaves small deflections slow for aiming.
  *
@@ -41,8 +43,11 @@ import kotlin.math.pow
  * keys, and what was held is released.
  */
 class DPADNavigationEventsAdapter(
-    /** Gets the direction vector whenever it changes (and again on key repeats, see [dispatchKeyEvent]). */
-    private val onDirection: (x: Float, y: Float) -> Unit,
+    /**
+     * Gets the direction vector whenever it changes (and again on key repeats, see [dispatchKeyEvent]).
+     * `discrete` is true when a direction key was just pressed: the cursor may move one exact step.
+     */
+    private val onDirection: (x: Float, y: Float, discrete: Boolean) -> Unit,
 
     /** Gets the navigation keys that are not directions (select). */
     private val onKeyEvent: (KeyEvent) -> Boolean,
@@ -120,7 +125,8 @@ class DPADNavigationEventsAdapter(
                     }
                     heldKeys += keyCode
                 }
-                emit(force = repeat)
+                // a repeat is the held key saying the same again: the step was taken on the press
+                emit(force = repeat, discrete = !repeat)
             }
             KeyEvent.ACTION_UP -> {
                 heldKeys.remove(keyCode)
@@ -175,7 +181,7 @@ class DPADNavigationEventsAdapter(
         emit()
     }
 
-    private fun emit(force: Boolean = false) {
+    private fun emit(force: Boolean = false, discrete: Boolean = false) {
         // the D-pad channel: the keys and the hats together (a pad may send its D-pad as both)
         var dpadX = 0f
         var dpadY = 0f
@@ -213,7 +219,7 @@ class DPADNavigationEventsAdapter(
         lastX = x
         lastY = y
         try {
-            onDirection(x, y)
+            onDirection(x, y, discrete)
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to dispatch direction ($x, $y)", t)
         }

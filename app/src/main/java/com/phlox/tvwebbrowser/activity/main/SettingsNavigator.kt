@@ -49,7 +49,7 @@ class SettingsNavigator(
         CHANNEL_BOOKMARKS, CHANNEL_BOOKMARKS_SOURCE, CHANNEL_TABS, CHANNEL_DOWNLOADS,
         SITE_VIEW, USER_AGENT, USER_AGENT_STRING, AUTOPLAY, AD_BLOCK, TRACKING_PROTECTION, FILTER_LIST, REGIONAL_LIST, CUSTOM_LIST, UPDATE_LISTS, VIDEO_PLAYER, VIDEO_HINT,
         INTERFACE, THEME, DARKENING, KEEP_SCREEN_ON, MATCH_FRAME_RATE,
-        CURSOR_SPEED, CURSOR_ACCELERATION, JOYSTICK, SHORTCUT,
+        CURSOR_SPEED, CURSOR_ACCELERATION, CURSOR_STEP, JOYSTICK, SHORTCUT,
         CLEAR_CACHE, ENGINE_DEBUG, HISTORY_RETENTION, DOWNLOAD_FOLDER, PROXY, PROXY_TYPE, PROXY_HOST, PROXY_PORT, PROXY_USERNAME, PROXY_PASSWORD,
         INFO, INFO_ATTRIBUTION, UPDATE, AUTO_UPDATE, UPDATE_CHANNEL,
         LINK_SOURCE, LINK_SUPPORT, LINK_ICON, LINK_LICENSE, LINK_PRIVACY, NOTICE
@@ -155,6 +155,7 @@ class SettingsNavigator(
         var joystickNavigation: Boolean
         var cursorSpeed: Int
         var cursorAcceleration: Int
+        var cursorStepDp: Int
         fun bindingsOf(shortcut: Shortcut): List<KeyBinding>
 
         suspend fun clearCache()
@@ -596,10 +597,22 @@ class SettingsNavigator(
     }
 
     fun setSlider(key: Key, value: Int) {
-        val clamped = value.coerceIn(Config.CURSOR_PHYSICS_PERCENT_MIN, Config.CURSOR_PHYSICS_PERCENT_MAX)
         when (key) {
-            Key.CURSOR_SPEED -> if (store.cursorSpeed != clamped) store.cursorSpeed = clamped else return
-            Key.CURSOR_ACCELERATION -> if (store.cursorAcceleration != clamped) store.cursorAcceleration = clamped else return
+            Key.CURSOR_SPEED -> {
+                val clamped = value.coerceIn(Config.CURSOR_PHYSICS_PERCENT_MIN, Config.CURSOR_PHYSICS_PERCENT_MAX)
+                if (store.cursorSpeed == clamped) return
+                store.cursorSpeed = clamped
+            }
+            Key.CURSOR_ACCELERATION -> {
+                val clamped = value.coerceIn(Config.CURSOR_PHYSICS_PERCENT_MIN, Config.CURSOR_PHYSICS_PERCENT_MAX)
+                if (store.cursorAcceleration == clamped) return
+                store.cursorAcceleration = clamped
+            }
+            Key.CURSOR_STEP -> {
+                val clamped = value.coerceIn(Config.CURSOR_STEP_DP_MIN, Config.CURSOR_STEP_DP_MAX)
+                if (store.cursorStepDp == clamped) return
+                store.cursorStepDp = clamped
+            }
             else -> return
         }
         render()
@@ -1052,6 +1065,10 @@ class SettingsNavigator(
             Row.Slider(Key.CURSOR_ACCELERATION, string(R.string.settings_cursor_acceleration),
                 string(R.string.settings_cursor_acceleration_summary), store.cursorAcceleration, min, max,
                 context.getString(R.string.settings_percent, store.cursorAcceleration)),
+            Row.Slider(Key.CURSOR_STEP, string(R.string.settings_cursor_step),
+                string(R.string.settings_cursor_step_summary), store.cursorStepDp,
+                Config.CURSOR_STEP_DP_MIN, Config.CURSOR_STEP_DP_MAX,
+                context.getString(R.string.settings_dp, store.cursorStepDp)),
             Row.Toggle(Key.JOYSTICK, string(R.string.settings_joystick), string(R.string.settings_joystick_summary),
                 store.joystickNavigation)
         )

@@ -329,6 +329,37 @@ class CursorPointerEmulationTest {
     }
 
     @Test
+    fun aPressOfAHiddenCursorStillClicks() {
+        val delegate = attachedDelegate()
+        delegate.moveTo(100f, 100f)
+        delegate.hideCursor()
+        target.sent.clear()
+
+        click(delegate)
+
+        assertEquals(listOf(MotionEvent.ACTION_DOWN, MotionEvent.ACTION_UP), target.actions())
+    }
+
+    @Test
+    fun aClickWhilePushingAnEdgeEndsTheScrollHackFirst() {
+        val delegate = attachedDelegate()
+        delegate.onSizeChanged(1920, 1080, 0, 0)
+        delegate.moveTo(1900f, 500f)
+        delegate.setDirection(1f, 0f)
+        runFrames(6)
+        assertTrue(target.actions().contains(MotionEvent.ACTION_DOWN))
+        target.sent.clear()
+
+        // the click key goes down while the direction is still held: the hack's drag is ended first
+        delegate.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER))
+        assertEquals(MotionEvent.ACTION_CANCEL, target.actions().first())
+        assertEquals(MotionEvent.ACTION_DOWN, target.actions()[1])
+        delegate.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER))
+        assertEquals(MotionEvent.ACTION_UP, target.actions().last())
+        delegate.setDirection(0f, 0f)
+    }
+
+    @Test
     fun theGrabModeOfAMouseScrollsUnderAStandingCursor() {
         val delegate = attachedDelegate(PointerMode.MOUSE)
         delegate.moveTo(100f, 100f)
@@ -453,6 +484,41 @@ class CursorPointerEmulationTest {
         val stopX = delegate.cursorPosition.x
         runFrames(10)
         assertEquals(stopX, delegate.cursorPosition.x, 0f)
+    }
+
+    @Test
+    fun aDirectionKeyTapIsOneStepAndAHeldKeyMovesOn() {
+        val delegate = attachedDelegate()
+        delegate.moveTo(100f, 200f)
+
+        // a press moves one step at once
+        delegate.setDirection(1f, 0f, discrete = true)
+        val stepX = delegate.cursorPosition.x
+        assertTrue("the press moves the cursor", stepX > 100f)
+
+        // a tap ended before the delay leaves the cursor where the step put it
+        delegate.setDirection(0f, 0f)
+        runFrames(5)
+        assertEquals(stepX, delegate.cursorPosition.x, 0f)
+
+        // held past the delay, the key starts the continuous movement
+        delegate.setDirection(1f, 0f, discrete = true)
+        val secondStepX = delegate.cursorPosition.x
+        assertTrue(secondStepX > stepX)
+        SystemClock.sleep(400)
+        assertTrue("x=${delegate.cursorPosition.x} step=$secondStepX",
+            runFramesUntilMoved(delegate, secondStepX))
+        delegate.setDirection(0f, 0f)
+    }
+
+    /** Runs the tasks of the main looper 16 ms apart until the cursor leaves [fromX] */
+    private fun runFramesUntilMoved(delegate: CursorDrawerDelegate, fromX: Float): Boolean {
+        repeat(80) {
+            shadowOf(Looper.getMainLooper()).runOneTask()
+            SystemClock.sleep(16)
+            if (delegate.cursorPosition.x != fromX) return true
+        }
+        return false
     }
 
     /** Runs the tasks of the main looper until the cursor moves; gives the step */
